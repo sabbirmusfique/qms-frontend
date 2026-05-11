@@ -15,7 +15,7 @@ import Permissions from "@/pages/Permissions";
 import Audit from "@/pages/Audit";
 import Sync from "@/pages/Sync";
 import Notifications from "@/pages/Notifications";
-import Profile from "@/pages/Profile";
+import { ProfilePage } from "@/pages/profile/ProfilePage";
 import SystemSettings from "@/pages/SystemSettings";
 import NotFound from "@/pages/NotFound";
 
@@ -37,7 +37,7 @@ const App = () => (
                   <Route path="/dashboard" element={<Dashboard />} />
                   <Route path="/documents" element={<Documents />} />
                   <Route path="/notifications" element={<Notifications />} />
-                  <Route path="/profile" element={<Profile />} />
+                  <Route path="/profile" element={<ProfilePage />} />
                 </Route>
               </Route>
               <Route element={<ProtectedRoute role="admin" />}>

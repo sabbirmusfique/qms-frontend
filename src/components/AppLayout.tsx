@@ -9,9 +9,11 @@ import { useTheme } from "@/contexts/ThemeContext";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { notifications as allNotifs } from "@/lib/mock-data";
+import { ChangePasswordModal } from "@/pages/profile/forms/ChangePasswordModal";
+import { cn } from "@/lib/utils";
 
 export default function AppLayout() {
-  const { user, logout } = useAuth();
+  const { user, logout, mustReset, completeReset } = useAuth();
   const { mode, setMode, resolvedDark } = useTheme();
   const navigate = useNavigate();
   const notifs = user?.role === "admin" ? allNotifs.admin : allNotifs.employee;
@@ -21,9 +23,10 @@ export default function AppLayout() {
 
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-background">
-        <AppSidebar />
-        <div className="flex-1 flex flex-col min-w-0">
+      <div className="min-h-screen flex w-full bg-background relative">
+        <div className={cn("flex w-full", mustReset && "blur-md pointer-events-none")}>
+          <AppSidebar />
+          <div className="flex-1 flex flex-col min-w-0">
           <header className="h-16 flex items-center justify-between  px-4 md:px-6 sticky top-0 bg-background/80 backdrop-blur z-30">
             <div className="flex items-center gap-3">
               <div className="hidden md:block">
@@ -78,6 +81,8 @@ export default function AppLayout() {
           </main>
         </div>
       </div>
-    </SidebarProvider>
-  );
+    </div>
+    <ChangePasswordModal open={mustReset} onPasswordChanged={completeReset} />
+  </SidebarProvider>
+);
 }

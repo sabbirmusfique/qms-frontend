@@ -34,7 +34,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const stored = localStorage.getItem("USER");
     return stored ? JSON.parse(stored) : null;
   });
-  const [mustReset, setMustReset] = useState(false);
+  const [mustReset, setMustReset] = useState(() => {
+    const stored = localStorage.getItem("USER");
+    if (stored) {
+      const u = JSON.parse(stored);
+      return u.passwordChangeRequired === true;
+    }
+    return false;
+  });
 
   useEffect(() => {
     if (user) {
