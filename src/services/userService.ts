@@ -86,3 +86,15 @@ export function useUpdateUser(id: number) {
     },
   });
 }
+
+export function useUpdateUserAdmin() {
+  return useMutation<UserDto, AxiosError<ApiErrorResponse>, { id: number; data: UpdateUserRequest }>({
+    mutationFn: async ({ id, data: userData }) => {
+      const { data } = await axios.patch<UserResponse>(`/admin/users/${id}`, userData);
+      if (!data.success) {
+        throw new Error("Failed to update user");
+      }
+      return data.data.user;
+    },
+  });
+}

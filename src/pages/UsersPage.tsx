@@ -4,18 +4,96 @@ import { type User } from "@/lib/mock-data";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Search, Plus, Download, MoreHorizontal, KeyRound, Loader2 } from "lucide-react";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import {
+  Search,
+  Plus,
+  Download,
+  MoreHorizontal,
+  KeyRound,
+  Loader2,
+  Eye,
+  EyeOff,
+} from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
-import { useAdminUsers, useCreateUser, useUpdateUser, type UserDto } from "@/services/userService";
+import {
+  useAdminUsers,
+  useCreateUser,
+  useUpdateUserAdmin,
+  type UserDto,
+} from "@/services/userService";
 import { getApiErrorMessage } from "@/services/authService";
+import { cn } from "@/lib/utils";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+
+const StatusToggle = ({
+  active,
+  onToggle,
+  disabled,
+}: {
+  active: boolean;
+  onToggle: () => void;
+  disabled?: boolean;
+}) => (
+  <button
+    type="button"
+    disabled={disabled}
+    onClick={onToggle}
+    className={cn(
+      "relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50",
+      active ? "bg-primary" : "bg-muted",
+    )}
+  >
+    <div
+      className={cn(
+        "pointer-events-none block h-5 w-5 rounded-full bg-background shadow-lg ring-0 transition-transform",
+        active ? "translate-x-5" : "translate-x-0",
+      )}
+    />
+  </button>
+);
 
 export default function Users() {
   const { data: users = [], isLoading, refetch } = useAdminUsers();
@@ -25,11 +103,14 @@ export default function Users() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [createOpen, setCreateOpen] = useState(false);
   const [editUser, setEditUser] = useState<UserDto | null>(null);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [userToToggle, setUserToToggle] = useState<UserDto | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
 
   // Create form state
   const [newName, setNewName] = useState("");
-  const [newEmail, setNewEmail] = useState("");
-  const [newRole, setNewRole] = useState("employee");
+  const [newEmailPrefix, setNewEmailPrefix] = useState("");
+  const [newRole, setNewRole] = useState("user");
   const [newPassword, setNewPassword] = useState("");
   const [newActive, setNewActive] = useState(true);
 
@@ -37,7 +118,7 @@ export default function Users() {
   const [editName, setEditName] = useState("");
   const [editRole, setEditRole] = useState("");
   const [editActive, setEditActive] = useState(true);
-  const updateUserMutation = useUpdateUser(editUser?.id || 0);
+  const updateUserMutation = useUpdateUserAdmin();
 
   useEffect(() => {
     if (editUser) {
@@ -47,37 +128,49 @@ export default function Users() {
     }
   }, [editUser]);
 
-  const filtered = users.filter(u =>
-    (u.name.toLowerCase().includes(search.toLowerCase()) || u.email.toLowerCase().includes(search.toLowerCase())) &&
-    (roleFilter === "all" || u.role === roleFilter) &&
-    (statusFilter === "all" || (statusFilter === "active" ? u.isActive : !u.isActive))
+  const filtered = users.filter(
+    (u) =>
+      (u.name.toLowerCase().includes(search.toLowerCase()) ||
+        u.email.toLowerCase().includes(search.toLowerCase())) &&
+      (roleFilter === "all" || u.role === roleFilter) &&
+      (statusFilter === "all" ||
+        (statusFilter === "active" ? u.isActive : !u.isActive)),
   );
 
   const handleCreate = () => {
-    if (!newName || !newEmail || !newRole) {
+    if (!newName || !newEmailPrefix || !newRole) {
       toast.error("Please fill all required fields");
       return;
     }
+    const fullEmail = `${newEmailPrefix}@bedatasolutions.com`;
     createUserMutation.mutate(
-      { name: newName, email: newEmail, role: newRole, password: newPassword || undefined },
+      {
+        name: newName,
+        email: fullEmail,
+        role: newRole,
+        password: newPassword || undefined,
+      },
       {
         onSuccess: () => {
           toast.success("User created successfully");
           setCreateOpen(false);
           refetch();
           setNewName("");
-          setNewEmail("");
+          setNewEmailPrefix("");
           setNewPassword("");
         },
         onError: (err) => toast.error(getApiErrorMessage(err as any)),
-      }
+      },
     );
   };
 
   const handleUpdate = () => {
     if (!editUser) return;
     updateUserMutation.mutate(
-      { name: editName, role: editRole, isActive: editActive },
+      {
+        id: editUser.id,
+        data: { name: editName, role: editRole, isActive: editActive },
+      },
       {
         onSuccess: () => {
           toast.success("User updated successfully");
@@ -85,7 +178,7 @@ export default function Users() {
           refetch();
         },
         onError: (err) => toast.error(getApiErrorMessage(err as any)),
-      }
+      },
     );
   };
 
@@ -93,42 +186,90 @@ export default function Users() {
     // We reuse the update mutation for toggling status
     const tempMutation = updateUserMutation; // Note: id is bound in the hook, so this might be tricky if not careful
     // But since we have useUpdateUser(editUser?.id || 0), we should use a different approach or just setEditUser before toggling.
-    // For simplicity, let's just use the mutation function directly if possible or trigger it via setEditUser.
     setEditUser(u);
     setEditName(u.name);
     setEditRole(u.role);
     setEditActive(!u.isActive);
-    // This will open the modal, but maybe we want a quick toggle.
-    // I'll leave it as is for now.
+  };
+
+  const handleConfirmToggle = () => {
+    if (!userToToggle) return;
+    updateUserMutation.mutate(
+      {
+        id: userToToggle.id,
+        data: {
+          name: userToToggle.name,
+          role: userToToggle.role,
+          isActive: !userToToggle.isActive,
+        },
+      },
+      {
+        onSuccess: () => {
+          toast.success(
+            `User ${!userToToggle.isActive ? "activated" : "deactivated"} successfully`,
+          );
+          refetch();
+          setConfirmOpen(false);
+          setUserToToggle(null);
+        },
+        onError: (err) => {
+          toast.error(getApiErrorMessage(err as any));
+          setConfirmOpen(false);
+          setUserToToggle(null);
+        },
+      },
+    );
   };
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Users" description="Manage your organisation's QMS user accounts." actions={
-        <>
-          <Button variant="outline" onClick={() => toast.success("User list exported")}><Download className="h-4 w-4 mr-2" />Export</Button>
-          <Button onClick={() => setCreateOpen(true)}><Plus className="h-4 w-4 mr-2" />Add user</Button>
-        </>
-      } />
+      <PageHeader
+        title="Users"
+        description="Manage your organisation's QMS user accounts."
+        actions={
+          <>
+            <Button
+              variant="outline"
+              onClick={() => toast.success("User list exported")}
+            >
+              <Download className="h-4 w-4 mr-2" />
+              Export
+            </Button>
+            <Button onClick={() => setCreateOpen(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              Add User
+            </Button>
+          </>
+        }
+      />
       <Card>
         <CardContent className="p-4">
           <div className="flex flex-col sm:flex-row gap-2 mb-4">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input placeholder="Search users by name or email..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
+              <Input
+                placeholder="Search users by name or email..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="pl-9"
+              />
             </div>
             <Select value={roleFilter} onValueChange={setRoleFilter}>
-              <SelectTrigger className="w-full sm:w-36"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="w-full sm:w-36">
+                <SelectValue />
+              </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All roles</SelectItem>
                 <SelectItem value="admin">Admin</SelectItem>
-                <SelectItem value="employee">Employee</SelectItem>
+                <SelectItem value="user">User</SelectItem>
               </SelectContent>
             </Select>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-full sm:w-36"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="w-full sm:w-36">
+                <SelectValue />
+              </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All statuses</SelectItem>
+                <SelectItem value="all">All</SelectItem>
                 <SelectItem value="active">Active</SelectItem>
                 <SelectItem value="inactive">Inactive</SelectItem>
               </SelectContent>
@@ -136,40 +277,113 @@ export default function Users() {
           </div>
           <div className="overflow-x-auto">
             {isLoading ? (
-              <div className="flex justify-center py-12"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
+              <div className="flex justify-center py-12">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              </div>
             ) : (
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Name</TableHead><TableHead>Email</TableHead><TableHead>Role</TableHead><TableHead>Status</TableHead><TableHead>Created</TableHead><TableHead></TableHead>
+                    <TableHead className="w-12"></TableHead>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Role</TableHead>
+                    <TableHead>Created</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead></TableHead>
+                    <TableHead></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filtered.map(u => (
+                  {filtered.map((u) => (
                     <TableRow key={u.id}>
-                      <TableCell className="font-medium whitespace-nowrap">{u.name}</TableCell>
-                      <TableCell className="text-muted-foreground whitespace-nowrap">{u.email}</TableCell>
-                      <TableCell><Badge variant={u.role === "admin" ? "default" : "secondary"} className="capitalize">{u.role}</Badge></TableCell>
-                      <TableCell><StatusBadge status={u.isActive ? "active" : "inactive"} /></TableCell>
-                      <TableCell className="text-xs text-muted-foreground whitespace-nowrap">{new Date(u.createdAt).toLocaleDateString()}</TableCell>
+                      <TableCell>
+                        <Avatar className="h-9 w-9 border border-border">
+                          <AvatarImage src={(u as any).avatarUrl} />
+                          <AvatarFallback className="bg-primary/10 text-primary text-xs font-bold">
+                            {u.name
+                              .split(" ")
+                              .map((s) => s[0])
+                              .join("")
+                              .slice(0, 2)
+                              .toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                      </TableCell>
+                      <TableCell className="font-medium whitespace-nowrap">
+                        {u.name}
+                      </TableCell>
+                      <TableCell className="text-muted-foreground whitespace-nowrap">
+                        {u.email}
+                      </TableCell>
+                      <TableCell>
+                        <Badge
+                          variant={u.role === "admin" ? "default" : "secondary"}
+                          className="capitalize"
+                        >
+                          {u.role}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
+                        {new Date(u.createdAt).toLocaleDateString()}
+                      </TableCell>
+                      <TableCell>
+                        <StatusBadge
+                          status={u.isActive ? "active" : "inactive"}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <StatusToggle
+                          active={u.isActive}
+                          disabled={u.role === "admin"}
+                          onToggle={() => {
+                            setUserToToggle(u);
+                            setConfirmOpen(true);
+                          }}
+                        />
+                      </TableCell>
+
                       <TableCell>
                         <DropdownMenu>
-                          <DropdownMenuTrigger asChild><Button variant="ghost" size="icon"><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon">
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => setEditUser(u)}>Edit user</DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => toast.success("Password reset email sent")}><KeyRound className="h-3 w-3 mr-2" />Reset password</DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => {
-                              setEditUser(u);
-                              // Next tick to ensure editActive is updated
-                              setTimeout(() => handleUpdate(), 0);
-                            }}>{u.isActive ? "Deactivate" : "Activate"}</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => setEditUser(u)}>
+                              Edit User
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() =>
+                                toast.success("Password reset email sent")
+                              }
+                            >
+                              Reset password
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              disabled={u.role === "admin"}
+                              onClick={() => {
+                                setUserToToggle(u);
+                                setConfirmOpen(true);
+                              }}
+                            >
+                              {u.isActive ? "Deactivate" : "Activate"}
+                            </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </TableCell>
                     </TableRow>
                   ))}
                   {filtered.length === 0 && (
-                    <TableRow><TableCell colSpan={6} className="text-center py-12 text-muted-foreground">No users found</TableCell></TableRow>
+                    <TableRow>
+                      <TableCell
+                        colSpan={8}
+                        className="text-center py-12 text-muted-foreground"
+                      >
+                        No users found
+                      </TableCell>
+                    </TableRow>
                   )}
                 </TableBody>
               </Table>
@@ -180,25 +394,89 @@ export default function Users() {
 
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
         <DialogContent>
-          <DialogHeader><DialogTitle>Create user</DialogTitle><DialogDescription>Add a new user to QMS</DialogDescription></DialogHeader>
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold">Create User</DialogTitle>
+            {/* <DialogDescription>Add a new user to QMS</DialogDescription> */}
+          </DialogHeader>
           <div className="space-y-3">
-            <div className="space-y-1.5"><Label>Full name</Label><Input placeholder="Jane Doe" value={newName} onChange={e => setNewName(e.target.value)} /></div>
-            <div className="space-y-1.5"><Label>Email</Label><Input placeholder="jane@company.com" value={newEmail} onChange={e => setNewEmail(e.target.value)} /></div>
-            <div className="space-y-1.5"><Label>Role</Label>
+            <div className="space-y-1.5">
+              <Label>Full name</Label>
+              <Input
+                placeholder="Jane Doe"
+                value={newName}
+                onChange={(e) => setNewName(e.target.value)}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Email</Label>
+              <div className="relative">
+                <Input
+                  placeholder="jane.doe"
+                  value={newEmailPrefix}
+                  onChange={(e) => setNewEmailPrefix(e.target.value)}
+                  className="pr-[165px]"
+                />
+                <div className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground pointer-events-none select-none">
+                  @bedatasolutions.com
+                </div>
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Role</Label>
               <Select value={newRole} onValueChange={setNewRole}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent><SelectItem value="admin">Admin</SelectItem><SelectItem value="employee">Employee</SelectItem></SelectContent>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="admin">Admin</SelectItem>
+                  <SelectItem value="user">User</SelectItem>
+                </SelectContent>
               </Select>
             </div>
-            <div className="space-y-1.5"><Label>Initial password</Label><Input type="password" placeholder="••••••••" value={newPassword} onChange={e => setNewPassword(e.target.value)} /></div>
-            <label className="flex items-center gap-2 text-sm"><Checkbox defaultChecked />Force password reset on first login</label>
-            <label className="flex items-center justify-between text-sm"><span>Active</span><Switch checked={newActive} onCheckedChange={setNewActive} /></label>
+            <div className="space-y-1.5">
+              <Label>Initial password</Label>
+              <div className="relative">
+                <Input
+                  type={showPassword ? "text" : "password"}
+                  placeholder="••••••••"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  className="pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
+                </button>
+              </div>
+            </div>
+            <label className="flex items-center gap-2 text-sm">
+              <Checkbox defaultChecked />
+              Force password reset on first login
+            </label>
+            <label className="flex items-center justify-between text-sm">
+              <span>Active</span>
+              <Switch checked={newActive} onCheckedChange={setNewActive} />
+            </label>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setCreateOpen(false)}>Cancel</Button>
-            <Button onClick={handleCreate} disabled={createUserMutation.isPending}>
-              {createUserMutation.isPending && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-              Create user
+            <Button variant="outline" onClick={() => setCreateOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={handleCreate}
+              disabled={createUserMutation.isPending}
+            >
+              {createUserMutation.isPending && (
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              )}
+              Create User
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -206,29 +484,86 @@ export default function Users() {
 
       <Dialog open={!!editUser} onOpenChange={() => setEditUser(null)}>
         <DialogContent>
-          <DialogHeader><DialogTitle>Edit user</DialogTitle></DialogHeader>
+          <DialogHeader>
+            <DialogTitle>Edit User</DialogTitle>
+          </DialogHeader>
           {editUser && (
             <div className="space-y-3">
-              <div className="space-y-1.5"><Label>Full name</Label><Input value={editName} onChange={e => setEditName(e.target.value)} /></div>
-              <div className="space-y-1.5"><Label>Email</Label><Input value={editUser.email} readOnly disabled /></div>
-              <div className="space-y-1.5"><Label>Role</Label>
+              <div className="space-y-1.5">
+                <Label>Full name</Label>
+                <Input
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Email</Label>
+                <Input value={editUser.email} readOnly disabled />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Role</Label>
                 <Select value={editRole} onValueChange={setEditRole}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent><SelectItem value="admin">Admin</SelectItem><SelectItem value="employee">Employee</SelectItem></SelectContent>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="admin">Admin</SelectItem>
+                    <SelectItem value="user">User</SelectItem>
+                  </SelectContent>
                 </Select>
               </div>
-              <label className="flex items-center justify-between text-sm"><span>Active</span><Switch checked={editActive} onCheckedChange={setEditActive} /></label>
+              <label className="flex items-center justify-between text-sm">
+                <span>Active</span>
+                <Switch checked={editActive} onCheckedChange={setEditActive} />
+              </label>
             </div>
           )}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setEditUser(null)}>Cancel</Button>
-            <Button onClick={handleUpdate} disabled={updateUserMutation.isPending}>
-              {updateUserMutation.isPending && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+            <Button variant="outline" onClick={() => setEditUser(null)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={handleUpdate}
+              disabled={updateUserMutation.isPending}
+            >
+              {updateUserMutation.isPending && (
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              )}
               Save changes
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirm Status Change</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to{" "}
+              {userToToggle?.isActive ? "deactivate" : "activate"} the account
+              for <strong>{userToToggle?.name}</strong>?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setUserToToggle(null)}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                handleConfirmToggle();
+              }}
+              disabled={updateUserMutation.isPending}
+            >
+              {updateUserMutation.isPending && (
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              )}
+              Confirm
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

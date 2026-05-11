@@ -154,7 +154,7 @@
 //             <CardContent className="space-y-2 text-sm">
 //               {[
 //                 "Logged in from Chrome on macOS — Today, 09:12",
-//                 "Downloaded Employee Handbook.pdf — Today, 09:50",
+//                 "Downloaded user Handbook.pdf — Today, 09:50",
 //                 "Previewed Quality Manual v3.docx — Yesterday, 14:20",
 //                 "Updated profile — 3 days ago",
 //               ].map((t, i) => <div key={i} className="p-3 rounded-lg bg-muted">{t}</div>)}
