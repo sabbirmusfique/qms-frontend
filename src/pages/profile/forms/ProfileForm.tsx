@@ -18,16 +18,24 @@ import { useUpdateUser } from "@/services/userService";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
-export function ProfileForm({ initialName, email }: { initialName: string; email: string }) {
+export function ProfileForm({
+  initialName,
+  email,
+}: {
+  initialName: string;
+  email: string;
+}) {
   const { user } = useAuth();
-  
+
   const form = useForm<ProfileDto>({
     mode: "onChange",
     resolver: zodResolver(profileSchema),
     defaultValues: { name: initialName },
   });
 
-  const { mutateAsync: updateProfile, isPending } = useUpdateUser(Number(user?.id || 0));
+  const { mutateAsync: updateProfile, isPending } = useUpdateUser(
+    Number(user?.id || 0),
+  );
 
   const currentName = form.watch("name") || "";
 
@@ -47,13 +55,14 @@ export function ProfileForm({ initialName, email }: { initialName: string; email
     }
   };
 
-  const initials = currentName
-    .split(" ")
-    .filter(Boolean)
-    .map((n: string) => n[0])
-    .join("")
-    .toUpperCase()
-    .slice(0, 2) || "U";
+  const initials =
+    currentName
+      .split(" ")
+      .filter(Boolean)
+      .map((n: string) => n[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2) || "U";
 
   return (
     <div className="w-full max-w-lg mx-auto">
@@ -69,7 +78,10 @@ export function ProfileForm({ initialName, email }: { initialName: string; email
             </h2>
           </div>
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="w-full space-y-2">
+            <form
+              onSubmit={form.handleSubmit(onSubmit)}
+              className="w-full space-y-2"
+            >
               {/* Profile Picture Section */}
               <div className="flex flex-col items-center gap-3">
                 <div className="relative group">
@@ -84,8 +96,12 @@ export function ProfileForm({ initialName, email }: { initialName: string; email
                   </button>
                 </div>
                 <div className="text-center">
-                  <h3 className="text-sm font-semibold text-foreground">Profile Picture</h3>
-                  <p className="text-xs text-muted-foreground mt-1">PNG, JPG up to 10MB</p>
+                  <h3 className="text-sm font-semibold text-foreground">
+                    Profile Picture
+                  </h3>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    PNG, JPG up to 10MB
+                  </p>
                 </div>
               </div>
 
@@ -102,7 +118,11 @@ export function ProfileForm({ initialName, email }: { initialName: string; email
                           <div className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
                             <User className="h-5 w-5" />
                           </div>
-                          <Input className="pl-10 h-10" placeholder="Your Full Name" {...field} />
+                          <Input
+                            className="pl-10 h-10"
+                            placeholder="Your Full Name"
+                            {...field}
+                          />
                         </div>
                       </FormControl>
                       <FormMessage />
@@ -126,7 +146,9 @@ export function ProfileForm({ initialName, email }: { initialName: string; email
                       className="pl-10 h-10 bg-muted/50 cursor-not-allowed"
                     />
                   </div>
-                  <p className="text-sm text-muted-foreground">Email address cannot be changed</p>
+                  <p className="text-sm text-muted-foreground">
+                    Email address cannot be changed
+                  </p>
                 </div>
 
                 <div className="pt-2">

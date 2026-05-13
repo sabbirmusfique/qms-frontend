@@ -78,7 +78,10 @@ export function useCreateUser() {
 export function useUpdateUser(id: number) {
   return useMutation<UserDto, AxiosError<ApiErrorResponse>, UpdateUserRequest>({
     mutationFn: async (userData) => {
-      const { data } = await axios.patch<UserResponse>(`/admin/users/${id}`, userData);
+      const { data } = await axios.patch<UserResponse>(
+        `/admin/users/${id}`,
+        userData,
+      );
       if (!data.success) {
         throw new Error("Failed to update user");
       }
@@ -88,9 +91,16 @@ export function useUpdateUser(id: number) {
 }
 
 export function useUpdateUserAdmin() {
-  return useMutation<UserDto, AxiosError<ApiErrorResponse>, { id: number; data: UpdateUserRequest }>({
+  return useMutation<
+    UserDto,
+    AxiosError<ApiErrorResponse>,
+    { id: number; data: UpdateUserRequest }
+  >({
     mutationFn: async ({ id, data: userData }) => {
-      const { data } = await axios.patch<UserResponse>(`/admin/users/${id}`, userData);
+      const { data } = await axios.patch<UserResponse>(
+        `/admin/users/${id}`,
+        userData,
+      );
       if (!data.success) {
         throw new Error("Failed to update user");
       }
