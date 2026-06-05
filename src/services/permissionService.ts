@@ -180,6 +180,30 @@ interface UsersWithoutAccessResponse {
   };
 }
 
+export async function startPermissionSync() {
+  const { data } = await axios.post<{ success: boolean; data: { jobId: string } }>("/admin/permissions/sync");
+  return data.data;
+}
+
+export interface SyncJobStatus {
+  jobId: string;
+  status: "waiting" | "active" | "completed" | "failed";
+  result?: {
+    foldersScanned: number;
+    added: number;
+    removed: number;
+    durationMs: number;
+  };
+  error?: string;
+  createdAt?: number;
+  processedAt?: number;
+}
+
+export async function getSyncJobStatus(jobId: string) {
+  const { data } = await axios.get<{ success: boolean; data: SyncJobStatus }>(`/admin/permissions/sync/${jobId}`);
+  return data.data;
+}
+
 export function useUsersWithoutAccess(folderId: string | null, search?: string) {
   return useQuery<UsersWithoutAccessResponse["data"]["users"], AxiosError<ApiErrorResponse>>({
     queryKey: ["users-without-access", folderId, search],

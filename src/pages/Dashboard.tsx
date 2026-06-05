@@ -31,6 +31,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import { useFolders } from "@/services/fileService";
 import { useDashboardStats } from "@/services/systemService";
+import SyncNowButton from "@/components/SyncNowButton";
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -187,6 +188,7 @@ function AdminDashboard() {
                 <RefreshCw className="h-3 w-3 mr-2" />
                 Refresh now
               </Button>
+              <SyncNowButton variant="compact" />
             </CardContent>
           </Card>
           <Card>
@@ -267,7 +269,10 @@ function EmployeeDashboard() {
       </div>
       <Card>
         <CardHeader>
-          <CardTitle>My Folders</CardTitle>
+          <CardTitle className="flex items-center justify-between">
+            <span>My Folders</span>
+            <SyncNowButton variant="compact" />
+          </CardTitle>
           <CardDescription>Folders you have access to</CardDescription>
         </CardHeader>
         <CardContent className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
