@@ -13,6 +13,24 @@ interface AccessStats {
   totalDownloads: number;
 }
 
+export function useFileAccessLogs(params: { cursor?: number; limit?: number; enabled?: boolean } = {}) {
+  const queryParams = new URLSearchParams();
+  if (params.cursor) queryParams.append("cursor", params.cursor.toString());
+  if (params.limit) queryParams.append("limit", params.limit.toString());
+
+  return useQuery({
+    queryKey: ["file-access-logs", JSON.stringify(params)],
+    queryFn: async () => {
+      const { data } = await axios.get<{ success: boolean; data: { logs: any[]; nextCursor: number | null } }>(
+        `/drive/files/access-logs?${queryParams.toString()}`
+      );
+      if (!data.success) throw new Error("Failed to fetch access logs");
+      return data.data;
+    },
+    enabled: params.enabled ?? true,
+  });
+}
+
 export function useFileAccessStats() {
   return useQuery({
     queryKey: ["file-access-stats"],

@@ -45,6 +45,7 @@ const adminNav = [
 const employeeNav = [
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
   { title: "My Documents", url: "/documents", icon: FolderOpen },
+  { title: "My Activity", url: "/my-activity", icon: Activity },
   // { title: "Notifications", url: "/notifications", icon: Bell },
   { title: "Profile", url: "/profile", icon: User },
 ];

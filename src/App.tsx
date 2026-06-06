@@ -11,6 +11,7 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import Login from "@/pages/login/Login";
 import Dashboard from "@/pages/Dashboard";
 import Documents from "@/pages/Documents";
+import ActivityPage from "@/pages/ActivityPage";
 import UsersPage from "@/pages/UsersPage";
 import Permissions from "@/pages/Permissions";
 import Audit from "@/pages/Audit";
@@ -40,6 +41,7 @@ const App = () => (
                     <Route path="/documents" element={<Documents />} />
                     <Route path="/notifications" element={<Notifications />} />
                     <Route path="/profile" element={<ProfilePage />} />
+                    <Route path="/my-activity" element={<ActivityPage />} />
                   </Route>
                 </Route>
                 <Route element={<ProtectedRoute role="admin" />}>

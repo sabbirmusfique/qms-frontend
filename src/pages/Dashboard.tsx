@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useAuditLogs } from "@/services/auditService";
+import { useFileAccessLogs } from "@/services/fileService";
 import {
   Table,
   TableBody,
@@ -250,6 +251,9 @@ function EmployeeDashboard() {
     limit: 5,
   });
   const { data: accessStats, isLoading: loadingAccessStats } = useFileAccessStats();
+  const { data: accessLogsData, isLoading: loadingAccessLogs } = useFileAccessLogs({
+    limit: 5,
+  });
 
   useEffect(() => {
     if (prevSyncing.current && !isSyncing) {
@@ -259,6 +263,7 @@ function EmployeeDashboard() {
     prevSyncing.current = isSyncing;
   }, [isSyncing, refetch, refetchAuditLogs]);
   const logs = auditData?.logs || [];
+  const fileAccessLogs = accessLogsData?.logs ?? [];
 
   return (
     <div className="space-y-6">
@@ -332,42 +337,60 @@ function EmployeeDashboard() {
       </Card>
       <Card>
         <CardHeader>
-          <CardTitle>Recent Activity</CardTitle>
+          <CardTitle className="flex items-center justify-between">
+            <span>Recent Activity</span>
+            <Button variant="link" size="sm" onClick={() => nav("/my-activity")}>
+              See all
+            </Button>
+          </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          {loadingLogs ? (
+          {loadingLogs || loadingAccessLogs ? (
             <div className="flex justify-center py-4">
               <Loader2 className="h-6 w-6 animate-spin text-primary" />
             </div>
-          ) : logs.length > 0 ? (
-            logs.map((l) => (
-              <div
-                key={l.id}
-                className="flex items-center justify-between text-sm border-b border-border last:border-0 pb-3 last:pb-0"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="h-8 w-8 rounded-full flex items-center justify-center bg-blue-100 text-blue-700">
-                    {l.action.includes("GRANT") ? (
-                      <Check className="h-4 w-4" />
-                    ) : (
-                      <Clock className="h-4 w-4" />
-                    )}
-                  </div>
-                  <div>
-                    <div className="font-medium">{l.action}</div>
-                    <div className="text-xs text-muted-foreground">
-                      {l.folderName || l.targetName}
+          ) : logs.length > 0 || fileAccessLogs.length > 0 ? (
+            [...fileAccessLogs.map((l: any) => ({ ...l, _kind: "file_access" as const })), ...logs.map((l: any) => ({ ...l, _kind: "permission" as const }))]
+              .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+              .slice(0, 5)
+              .map((entry: any) => (
+                <div
+                  key={entry._kind === "file_access" ? `f-${entry.id}` : `a-${entry.id}`}
+                  className="flex items-center justify-between text-sm border-b border-border last:border-0 pb-3 last:pb-0"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="h-8 w-8 rounded-full flex items-center justify-center bg-blue-100 text-blue-700">
+                      {entry._kind === "file_access" ? (
+                        entry.action === "download" ? (
+                          <Download className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )
+                      ) : entry.action.includes("GRANT") ? (
+                        <Check className="h-4 w-4" />
+                      ) : (
+                        <Clock className="h-4 w-4" />
+                      )}
+                    </div>
+                    <div>
+                      <div className="font-medium">
+                        {entry._kind === "file_access"
+                          ? `${entry.action === "download" ? "Downloaded" : "Previewed"} ${entry.fileName}`
+                          : entry.action}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        {entry._kind === "permission" ? entry.folderName || entry.targetName : ""}
+                      </div>
                     </div>
                   </div>
-                </div>
-                <div className="text-right">
-                  <div className="text-xs text-muted-foreground">
-                    {new Date(l.createdAt).toLocaleDateString()}
+                  <div className="text-right">
+                    <div className="text-xs text-muted-foreground">
+                      {new Date(entry.createdAt).toLocaleDateString()}
+                    </div>
+                    <StatusBadge status="active" />
                   </div>
-                  <StatusBadge status="active" />
                 </div>
-              </div>
-            ))
+              ))
           ) : (
             <div className="text-sm text-muted-foreground py-4 text-center">
               No recent activity recorded for your account.
