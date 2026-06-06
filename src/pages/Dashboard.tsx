@@ -1,4 +1,6 @@
+import { useEffect, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useSyncJob } from "@/contexts/SyncJobContext";
 import { MetricCard, PageHeader, StatusBadge } from "@/components/shared";
 import {
   Users,
@@ -230,7 +232,16 @@ function AdminDashboard() {
 function EmployeeDashboard() {
   const { user } = useAuth();
   const nav = useNavigate();
-  const { data: rootFolders = [], isLoading: loadingFolders } = useFolders();
+  const { data: rootFolders = [], isLoading: loadingFolders, refetch } = useFolders();
+  const { isSyncing } = useSyncJob();
+  const prevSyncing = useRef(isSyncing);
+
+  useEffect(() => {
+    if (prevSyncing.current && !isSyncing) {
+      refetch();
+    }
+    prevSyncing.current = isSyncing;
+  }, [isSyncing, refetch]);
 
   const { data: auditData, isLoading: loadingLogs } = useAuditLogs({
     search: user?.name,
