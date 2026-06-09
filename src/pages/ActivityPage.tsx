@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useAuth } from "@/contexts/AuthContext";
 import { PageHeader, StatusBadge } from "@/components/shared";
 import { useAuditLogs } from "@/services/auditService";
 import { useFileAccessLogs } from "@/services/fileService";
@@ -24,6 +25,7 @@ import { Loader2, ChevronLeft, ChevronRight, Download, Eye } from "lucide-react"
 type ActivityType = "activity" | "permissions";
 
 export default function ActivityPage() {
+  const { user } = useAuth();
   const [type, setType] = useState<ActivityType>("activity");
 
   const [fileCursor, setFileCursor] = useState<number | undefined>(undefined);
@@ -43,7 +45,7 @@ export default function ActivityPage() {
 
   const { data: auditData, isLoading: loadingAudit } = useAuditLogs(
     !isFileMode
-      ? { cursor: auditCursor, limit, targetType: "ALL" }
+      ? { cursor: auditCursor, limit, targetType: "FolderPermission", search: user?.email }
       : {}
   );
 
